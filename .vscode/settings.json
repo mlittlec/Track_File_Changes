@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "${workspaceFolder:Track_File_Changes}/filetrack.db",
+            "name": "Martin"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
