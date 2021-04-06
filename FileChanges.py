@@ -19,7 +19,7 @@ def connectdb():
 
         # Uncomment the line below to confirm the function works
         # this file contains a single table called 'people' (no rows)
-        # db_file = 'filetrack.db'
+        # dbfile = 'filetrack.db'
         conn = sqlite3.connect(dbfile, timeout=2)
     except BaseException as err:
         print(str(err))
