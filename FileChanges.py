@@ -1,25 +1,20 @@
 import os
 import sys
 import sqlite3
+import hashlib
 
-# From Milestone #1
+# From milestones 1 and 2
 
 
 def getbasefile():
     """Name of the SQLite DB file"""
     return os.path.splitext(os.path.basename(__file__))[0]
 
-# From Milestone #1
-
 
 def connectdb():
     """Connect to the SQLite DB"""
     try:
-        dbfile = getbasefile() + '.db'  # Opens the file created
-
-        # Uncomment the line below to confirm the function works
-        # this file contains a single table called 'people' (no rows)
-        # dbfile = 'filetrack.db'
+        dbfile = getbasefile() + '.db'
         conn = sqlite3.connect(dbfile, timeout=2)
     except BaseException as err:
         print(str(err))
@@ -27,7 +22,6 @@ def connectdb():
     return conn
 
 
-# From Milestone #1
 def corecursor(conn, query, args):
     """Opens a SQLite DB cursor"""
     result = False
@@ -42,12 +36,14 @@ def corecursor(conn, query, args):
         print(str(err))
         if cursor != None:
             cursor.close()
+    finally:
+        if cursor != None:
+            cursor.close()
     return result
 
 
-# From Milestone #1
 def tableexists(table):
-    """Checks if a SQLite DB table exists"""
+    """Checks if a SQLite DB Table exists"""
     result = False
     conn = connectdb()
     try:
@@ -64,11 +60,10 @@ def tableexists(table):
     return result
 
 
-# From Milestone #2
 def createhashtableidx():
     """Creates a SQLite DB Table Index"""
     table = 'files'
-    query = 'CREATE INDEX idxfile ON FILES (file, md5)'
+    query = 'CREATE INDEX idxfile ON files (file, md5)'
     conn = connectdb()
     try:
         if not conn is None:
@@ -93,9 +88,9 @@ def createhashtableidx():
 
 
 def createhashtable():
-    """Creates a SQLite DB table"""
+    """Creates a SQLite DB Table"""
     result = False
-    query = " CREATE TABLE files (file TEXT, md5 TEXT)"
+    query = "CREATE TABLE files (file TEXT, md5 TEXT)"
     conn = connectdb()
     try:
         if not conn is None:
@@ -118,7 +113,7 @@ def createhashtable():
     finally:
         if conn != None:
             conn.close()
-        return result
+    return result
 
 
 def runcmd(qry, args):
@@ -148,7 +143,7 @@ def runcmd(qry, args):
 
 def updatehashtable(fname, md5):
     """Update the SQLite File Table"""
-    qry = ("UPDATE files SET md5=? where file=?")
+    qry = "UPDATE files SET md5=? WHERE file=?"
     args = (md5, fname)
     runcmd(qry, args)
 
@@ -185,6 +180,9 @@ def md5indb(fname):
                     print(str(err))
                     if cursor != None:
                         cursor.close()
+                finally:
+                    if cursor != None:
+                        cursor.close()
     except sqlite3.OperationalError as err:
         print(str(err))
         if conn != None:
@@ -194,16 +192,38 @@ def md5indb(fname):
             conn.close()
     return items
 
+# From milestone 3
 
-####################################################
-# Test code to execute the functions shown above
-# Uncomment the lines as required to test the
-# functions in turn, or as needed
-####################################################
 
-# Tests From Milestone #1
-# getbasefile()
-# connectdb()
-# FileChanges.corecursor()
-# result = tableexists("people")
-# print(result)
+def haschanged(fname, md5):
+    """Checks if a file has changed"""
+    result = False
+    oldmd5 = md5indb(fname)
+    numits = len(oldmd5)
+    if numits > 0:
+        if oldmd5[0] != md5:
+            result = True
+            updatehashtable(fname, md5)
+    else:
+        setuphashtable(fname, md5)
+    return result
+
+
+def getfileext(fname):
+    """Get the file name extension"""
+    return os.path.splitext(fname)[1]
+
+
+def getmoddate(fname):
+    """Get file modified date"""
+    try:
+        mtime = os.path.getmtime(fname)
+    except OSError as emsg:
+        print(str(emsg))
+        mtime = 0
+    return mtime
+
+
+def md5short(fname):
+    """Get md5 file hash tag"""
+    return hashlib.md5(str(fname + '|' + str(getmoddate(fname))).encode('utf-8')).hexdigest()
